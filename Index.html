@@ -4,9 +4,13 @@ setwd('C:\\Users\\StephenRobertKuban\\Documents\\School\\4B\\Coursera - Practica
 dd <- read.csv('pml-training.csv')
 dd <- dd[,-(1:4)]
 dd2 <- dd[,colSums(is.na(dd))==0]  #eliminate any column with an NA value
-ddNoNum <- dd2[,-which(sapply(dd2, class)=='numeric' | sapply(dd2,class)=="integer")] # only numeric columns
+ddNoNum <- dd2[,-which(sapply(dd2, class)=='numeric' | sapply(dd2,class)=="integer")] # only non-numeric columns
 ddnum <- dd2[,which(sapply(dd2, class)=='numeric' | sapply(dd2,class)=="integer")] # only numeric columns
 ddnum2 <- cbind(ddnum, classe=dd$classe)
+
+# We will be using the dataframe ddnum and ddnum2 for analysis, which contain only the columns
+# with numeric values and without any missing values. This provides 53 potential explanatory
+# variates.
 
 c <- cor(ddnum)  # correlation matrix
   for (i in 1:dim(c)[1]){ for (j in i:dim(c)[1]) { c[i,j] <- 0}}
@@ -33,12 +37,24 @@ CV4 <- createDataPartition(y=ddnum2$classe, p=.7, list=F)
 CV4train <- ddnum2[CV4, ]
 CV4test <- ddnum2[-CV4, ]
 
+# This creates 4 random subsampling cross validation datasets which we'll be testing
+# our best algorithms on, to find the expected error rate.
 ###################################
 
 
 ddtest <- read.csv('pml-testing.csv')
 # PRINCIPAL COMPONENT ANALYSIS
 pca <- preProcess(ddnum, method='pca')
+ #    Call:
+#      preProcess.default(x = ddnum, method = "pca")
+#
+#      Created from 19622 samples and 53 variables
+#      Pre-processing: principal component signal extraction, scaled, centered
+#
+#      PCA needed 26 components to capture 95 percent of the variance
+
+# Therefore using PCA we were able to get 26 explanatory variables instead of 53.
+# This suggests that PCA is a useful tool to use to preprocess the data.
 
 
 # TREES
@@ -46,26 +62,73 @@ set.seed(123)
  tree1 <- train(classe~ ., data=ddnum2, method='rpart', preProc='pca')
  confusionMatrix(tree1)
  # Seems to predict A far too often.
- confusionMatrix(predict(tree1, newdata=dd), dd$classe)
- # Doesn't predict class C at all. Accuracy of only 34%
+ tree1CM <- confusionMatrix(predict(tree1, newdata=dd), dd$classe)
+         # Confusion Matrix and Statistics
+         #
+         #          Reference
+         #Prediction    A    B    C    D    E
+         #         A 4201 1414 2162  837 1354
+         #         B  654 1299  799  668  649
+         #         C    0    0    0    0    0
+         #         D  390  935  165 1306  584
+         #         E  335  149  296  405 1020
+         #
+         #Overall Statistics
+         #
+         #               Accuracy : 0.3988
+         #                 95% CI : (0.392, 0.4057)
+         #    No Information Rate : 0.2844
+         #    P-Value [Acc > NIR] : < 2.2e-16
+         #
+         #                  Kappa : 0.2157
+         # Mcnemar's Test P-Value : < 2.2e-16
+         #
+         #Statistics by Class:
+         #
+         #                     Class: A Class: B Class: C Class: D Class: E
+         #Sensitivity            0.7529   0.3421   0.0000  0.40609  0.28278
+         #Specificity            0.5893   0.8250   1.0000  0.87358  0.92601
+         #Pos Pred Value         0.4214   0.3192      NaN  0.38639  0.46259
+         #Neg Pred Value         0.8572   0.8394   0.8256  0.88240  0.85147
+         #Prevalence             0.2844   0.1935   0.1744  0.16390  0.18382
+         #Detection Rate         0.2141   0.0662   0.0000  0.06656  0.05198
+         #Detection Prevalence   0.5080   0.2074   0.0000  0.17226  0.11237
+         #Balanced Accuracy      0.6711   0.5835   0.5000  0.63984  0.60440
 
 
-# EVALUATE ALL BELT STUFF BY PCA
-belts <- dd[,which(sapply(names(dd), function(h) substring(h, nchar(h)-3)=="belt"))]
+ # Doesn't predict class C at all. Accuracy of only 40%
 
-# Multinomial model
+# This leads me to conclude that a tree predictive model is not suitable for this analysis
+
+
+
+# MULTINOMIAL MODEL
+#   The lectures often use Poisson models or logistic models in examples. Those models
+#    do not work well for this data, as we have 5 discrete possibilities. Therefore
+#    an extension of the logistic model is the multinomial model, which we shall try
+#    to use to predict.
 set.seed(4567)
 mn <- train(classe ~ ., data=ddnum2, method='multinom', preProcess='pca', verbose=F)
-mnPred <- predict(mn, newdata=dd)
-confusionMatrix(mnPred, dd$classe)
-  # This doesn't do very well. 45% accuracy. :/ But better than tree1.
+   mnPred <- predict(mn, newdata=dd)
+   mnCM <- confusionMatrix(mnPred, dd$classe)
+  # This doesn't do very well, giving us only 45% accuracy. However, it is better than tree1,
+  #  which returned only 34% accuracy. It's also important to note that this is in-sample
+  #  accuracy; we would expect an even poorer prediction when applying this model to a
+  #  new test set. We conclude therefore that we should perhaps sacrifice speed of the model
+  #  for model accuracy, so we shall try a boosting model.
 
-# BOOSTING
+
+
+# BOOSTING MODEL
 set.seed(89787)
 boost <- train(classe~ ., data=ddnum2, preProc='pca', method='gbm', verbose=F)
  boostCM <- confusionMatrix(predict(boost, newdata=dd), dd$classe)
  boostCM <-  confusionMatrix(predict(boost, newdata=dd), dd$classe)
- # High accuracy of 85%, by far the best predictive model so far, at least in accuracy
+ # High accuracy of 85%, by far the best predictive model so far, at least in accuracy.
+ #  This is encouraging, and we are going to move forward with this model. The only
+ #  problem is that it takes one hour to run the model. However, it is highly accurate.
+ #  Because it is accurate, we will move forward with it and apply it to the cross-
+ #  validation random subsets to estimate the expected out-of-sample error.
 
 # CROSS VALIDATION OF THE BOOSTING MODEL
 set.seed(6576)
