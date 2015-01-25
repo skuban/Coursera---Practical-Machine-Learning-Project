@@ -111,9 +111,41 @@ set.seed(4567)
 mn <- train(classe ~ ., data=ddnum2, method='multinom', preProcess='pca', verbose=F)
    mnPred <- predict(mn, newdata=dd)
    mnCM <- confusionMatrix(mnPred, dd$classe)
-  # This doesn't do very well, giving us only 45% accuracy. However, it is better than tree1,
-  #  which returned only 34% accuracy. It's also important to note that this is in-sample
-  #  accuracy; we would expect an even poorer prediction when applying this model to a
+   #  Confusion Matrix and Statistics
+  #
+  #              Reference
+  #    Prediction    A    B    C    D    E
+  #             A 3892  804  793  307  384
+  #             B  379 1668  381  351  555
+  #             C  437  611 1824  468  438
+  #             D  680  329  278 1701  493
+  #             E  192  385  146  389 1737
+  #
+  #    Overall Statistics
+  #
+  #                   Accuracy : 0.5515
+  #                     95% CI : (0.5445, 0.5585)
+  #        No Information Rate : 0.2844
+  #        P-Value [Acc > NIR] : < 2.2e-16
+  #
+  #                      Kappa : 0.431
+  #     Mcnemar's Test P-Value : < 2.2e-16
+  #
+  #    Statistics by Class:
+  #
+  #                         Class: A Class: B Class: C Class: D Class: E
+  #    Sensitivity            0.6975  0.43929  0.53302  0.52892  0.48156
+  #    Specificity            0.8371  0.89472  0.87938  0.89150  0.93057
+  #    Pos Pred Value         0.6298  0.50030  0.48280  0.48865  0.60969
+  #    Neg Pred Value         0.8744  0.86929  0.89914  0.90614  0.88851
+  #    Prevalence             0.2844  0.19351  0.17440  0.16390  0.18382
+  #    Detection Rate         0.1983  0.08501  0.09296  0.08669  0.08852
+  #    Detection Prevalence   0.3150  0.16991  0.19254  0.17740  0.14519
+  #    Balanced Accuracy      0.7673  0.66701  0.70620  0.71021  0.70606
+
+  # This doesn't do very well, giving us only 55% accuracy. However, it is better than tree1,
+  #  which returned only 40% accuracy. It's also important to note that this is in-sample
+  #  accuracy; we would expect even lower accuracy  when applying this model to a
   #  new test set. We conclude therefore that we should perhaps sacrifice speed of the model
   #  for model accuracy, so we shall try a boosting model.
 
@@ -124,11 +156,45 @@ set.seed(89787)
 boost <- train(classe~ ., data=ddnum2, preProc='pca', method='gbm', verbose=F)
  boostCM <- confusionMatrix(predict(boost, newdata=dd), dd$classe)
  boostCM <-  confusionMatrix(predict(boost, newdata=dd), dd$classe)
+
+        # Confusion Matrix and Statistics
+#
+#                  Reference
+#        Prediction    A    B    C    D    E
+#                 A 5093  287  127   75   88
+#                 B  116 3034  218   97  188
+#                 C  138  325 2972  350  188
+#                 D  194   88   78 2639  130
+#                 E   39   63   27   55 3013
+#
+#        Overall Statistics
+#
+#                       Accuracy : 0.8537
+#                         95% CI : (0.8487, 0.8586)
+#            No Information Rate : 0.2844
+#            P-Value [Acc > NIR] : < 2.2e-16
+#
+#                          Kappa : 0.8149
+#         Mcnemar's Test P-Value : < 2.2e-16
+#
+#        Statistics by Class:
+#
+#                             Class: A Class: B Class: C Class: D Class: E
+#        Sensitivity            0.9127   0.7991   0.8685   0.8206   0.8353
+#        Specificity            0.9589   0.9609   0.9382   0.9701   0.9885
+#        Pos Pred Value         0.8982   0.8306   0.7480   0.8434   0.9424
+#        Neg Pred Value         0.9651   0.9522   0.9712   0.9650   0.9638
+#        Prevalence             0.2844   0.1935   0.1744   0.1639   0.1838
+#        Detection Rate         0.2596   0.1546   0.1515   0.1345   0.1536
+#        Detection Prevalence   0.2890   0.1862   0.2025   0.1595   0.1629
+#        Balanced Accuracy      0.9358   0.8800   0.9034   0.8954   0.9119
+
  # High accuracy of 85%, by far the best predictive model so far, at least in accuracy.
  #  This is encouraging, and we are going to move forward with this model. The only
  #  problem is that it takes one hour to run the model. However, it is highly accurate.
  #  Because it is accurate, we will move forward with it and apply it to the cross-
  #  validation random subsets to estimate the expected out-of-sample error.
+
 
 # CROSS VALIDATION OF THE BOOSTING MODEL
 set.seed(6576)
@@ -171,24 +237,119 @@ boost1CM <- confusionMatrix(predict(boost1, newdata=CV1test), CV1test$classe)
 set.seed(90909)
 boost2 <- train(classe ~ ., data=CV2train, preProc='pca', method='gbm', verbose=F)
 boost2CM <- confusionMatrix(predict(boost2, newdata=CV2test), CV2test$classe)
-#                 Accuracy : 0.8233
-#                 95% CI : (0.8133, 0.8329)
-#     Shockingly it's the exact same estimate and CI as boost1
+  #        Confusion Matrix and Statistics
+#
+#                    Reference
+#          Prediction    A    B    C    D    E
+#                   A 1481  106   59   20   16
+#                   B   51  865   82   42   75
+#                   C   57  103  834  118   47
+#                   D   68   26   34  763   59
+#                   E   17   39   17   21  885
+#
+#          Overall Statistics
+#
+#                         Accuracy : 0.8204
+#                           95% CI : (0.8103, 0.8301)
+#              No Information Rate : 0.2845
+#              P-Value [Acc > NIR] : < 2.2e-16
+#
+#                            Kappa : 0.7728
+#           Mcnemar's Test P-Value : < 2.2e-16
+#
+#          Statistics by Class:
+#
+#                               Class: A Class: B Class: C Class: D Class: E
+#          Sensitivity            0.8847   0.7594   0.8129   0.7915   0.8179
+#          Specificity            0.9523   0.9473   0.9331   0.9620   0.9804
+#          Pos Pred Value         0.8805   0.7758   0.7196   0.8032   0.9040
+#          Neg Pred Value         0.9541   0.9426   0.9594   0.9593   0.9598
+#          Prevalence             0.2845   0.1935   0.1743   0.1638   0.1839
+#          Detection Rate         0.2517   0.1470   0.1417   0.1297   0.1504
+#          Detection Prevalence   0.2858   0.1895   0.1969   0.1614   0.1664
+#          Balanced Accuracy      0.9185   0.8534   0.8730   0.8767   0.8992
+
 set.seed(12123)
 boost3 <- train(classe ~ ., data=CV3train, preProc='pca', method='gbm', verbose=F)
 boost3CM <- confusionMatrix(predict(boost3, newdata=CV3test), CV3test$classe)
-#                 Accuracy : 0.8241
-#                 95% CI : (0.8142, 0.8338)
+     #Confusion Matrix and Statistics
+#
+#               Reference
+#     Prediction    A    B    C    D    E
+#              A 1490   97   56   25   41
+#              B   43  869   63   27   82
+#              C   47  107  865  123   61
+#              D   77   30   32  764   51
+#              E   17   36   10   25  847
+#
+#     Overall Statistics
+#
+#                    Accuracy : 0.8216
+#                      95% CI : (0.8116, 0.8313)
+#         No Information Rate : 0.2845
+#         P-Value [Acc > NIR] : < 2.2e-16
+#
+#                       Kappa : 0.7742
+#      Mcnemar's Test P-Value : < 2.2e-16
+#
+#     Statistics by Class:
+#
+#                          Class: A Class: B Class: C Class: D Class: E
+#     Sensitivity            0.8901   0.7629   0.8431   0.7925   0.7828
+#     Specificity            0.9480   0.9547   0.9304   0.9614   0.9817
+#     Pos Pred Value         0.8719   0.8017   0.7190   0.8008   0.9059
+#     Neg Pred Value         0.9559   0.9438   0.9656   0.9594   0.9525
+#     Prevalence             0.2845   0.1935   0.1743   0.1638   0.1839
+#     Detection Rate         0.2532   0.1477   0.1470   0.1298   0.1439
+#     Detection Prevalence   0.2904   0.1842   0.2044   0.1621   0.1589
+#     Balanced Accuracy      0.9190   0.8588   0.8868   0.8770   0.8822
+
+
+
 set.seed(38383)
 boost4 <- train(classe ~ ., data=CV4train, preProc='pca', method='gbm', verbose=F)
 boost4CM <- confusionMatrix(predict(boost4, newdata=CV4test), CV4test$classe)
-  #               Accuracy : 0.8323
-#                 95% CI : (0.8225, 0.8417)
+#       Confusion Matrix and Statistics
+#
+#                 Reference
+#       Prediction    A    B    C    D    E
+#                A 1478   96   48   36   50
+#                B   32  878   64   31   74
+#                C   69  116  873  125   76
+#                D   86   22   34  739   61
+#                E    9   27    7   33  821
+#
+#       Overall Statistics
+#
+#                      Accuracy : 0.8138
+#                        95% CI : (0.8036, 0.8236)
+#           No Information Rate : 0.2845
+#           P-Value [Acc > NIR] : < 2.2e-16
+#
+#                         Kappa : 0.7644
+#        Mcnemar's Test P-Value : < 2.2e-16
+#
+#       Statistics by Class:
+#
+#                            Class: A Class: B Class: C Class: D Class: E
+#       Sensitivity            0.8829   0.7709   0.8509   0.7666   0.7588
+#       Specificity            0.9454   0.9576   0.9206   0.9587   0.9842
+#       Pos Pred Value         0.8653   0.8137   0.6934   0.7845   0.9153
+#       Neg Pred Value         0.9531   0.9457   0.9669   0.9545   0.9477
+#       Prevalence             0.2845   0.1935   0.1743   0.1638   0.1839
+#       Detection Rate         0.2511   0.1492   0.1483   0.1256   0.1395
+#       Detection Prevalence   0.2902   0.1833   0.2139   0.1601   0.1524
+#       Balanced Accuracy      0.9141   0.8643   0.8857   0.8627   0.8715
+
+
+
 
 # All four cross-validations in the random sampling algorithms produce a very
-# narrow range of expected accuracy: between 82.3% and 83.2%. All four
-# point-estimates of the accuracy are within the 95% confidence intervals of
-# the other three estimates. Therefore it's reasonably expected that
-# the out-of-sample error rate should be approximately 82% - 83%. i.e. we
-# should expect approximately 16 of the 20 estimates in the test dataset
-# to be accurately predicted.
+# narrow range of expected accuracy: between 81.4% and 83.1%. Therefore it's
+# reasonably expected that the out-of-sample error rate should be approximately
+# 82%, i.e. we should expect approximately 16 of the 20 estimates in the
+# test dataset to be accurately predicted. This contrasts the accuracy of the
+# model 'boost' which used the whole training dataset, which anticipated 17 correct
+# predictions. Note that the out-of-sample error rate is larger than the within-
+# sample error rate. In fact, when the model 'boost' was run on the actual test
+# data, it scored 16/20, performing exactly as expected by this cross-validation.
